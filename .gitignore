@@ -4,3 +4,4 @@ __pycache__/
 
 
 datos/dataset_procesado/*.csv
+outputs/graficos/*.png

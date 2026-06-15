@@ -3,6 +3,7 @@ from preprocesamiento import Preprocesador
 from tfidf import CalculadorTFIDF
 from similitud_coseno import SimilitudCoseno
 from procesador_semantico import BuscadorSemantico
+from visualizador import VisualizadorCorpus
 
 def cargar_corpus():
     print("\nCargando datasets originales...")
@@ -106,15 +107,15 @@ def procesar_corpus(corpus_original):
 
     return corpus_procesado, lista_tokens, vocabulario, frecuencias_df
 
-def buscardor_semantico(estado):
+def buscador_semantico(estado):
 
     corpus = estado["corpus"]
     lista_tokens = estado["lista_tokens"]
     preprocesador = estado["preprocesador"]
 
-    print("\nCalculando TF-IDF -> prueba para ver si funciona------------------------------")
+    print("\nTF-IDF test")
 
-    calculador_tfidf = CalculadorTFIDF()
+    calculador_tfidf = estado["calculador_tfidf"]
     
     matriz_tfidf = calculador_tfidf.calcular_tfidf_corpus(lista_tokens)
 
@@ -131,7 +132,7 @@ def buscardor_semantico(estado):
     
     print("\nSimilitud del coseno --------------------------------------")
 
-    similitud_coseno = SimilitudCoseno()
+    similitud_coseno = estado["similitud_coseno"]
 
     similitud_versiculos = similitud_coseno.calcular_similitud( #prueba para ver si funciona 
         matriz_tfidf[0],
@@ -170,6 +171,18 @@ def buscardor_semantico(estado):
         print("Similitud:", resultado["similitud"])
         print("Texto:", resultado["texto"])
 
+def visualizacion_analisis_exploratorio(estado):
+    corpus = estado["corpus"]
+    frecuencias_df = estado["frecuencias_df"]
+
+    print("\nVisualización y análisis exploratorio")
+    print("--------------------------------------")
+
+    visualizador = VisualizadorCorpus()
+    visualizador.generar_visualizaciones_basicas(corpus, frecuencias_df)
+
+    print("\nVisualizaciones básicas generadas correctamente.")
+
 def main():
 
     corpus_original = cargar_corpus()
@@ -182,6 +195,7 @@ def main():
         "lista_tokens": lista_tokens,
         "vocabulario": vocabulario,
         "frecuencias_df": frecuencias_df,
+        "similitud_coseno": SimilitudCoseno(),
         "matriz_tfidf": None,
         "preprocesamiento_realizado": False,
         "tfidf_realizado": False
@@ -193,24 +207,22 @@ def main():
         print("1. Ver información del corpus original")
         print("2. Ver información del corpus resultante")
         print("3. Buscar semantico")#pa probar, aun no definida la estructura final de esta.
+        print("4. Visualización y análisis exploratorio") #pa probar, aun no definida la estructura final de esta.
         print("0. Salir")
 
         opcion = input("Seleccione una opción: ")
-
-        if opcion == "1":
+        if opcion == "0":
+            print("Saliendo...")
+        elif opcion == "1":
             infoDatasetOriginal(corpus_original)
         elif opcion == "2":
             infoDatasetPreprocesado(corpus_preprocesado, estado)
         elif opcion == "3":
-            buscardor_semantico(estado)
-
-
-
-
-
-    
-
-    
+            buscador_semantico(estado)
+        elif opcion == "4":
+            visualizacion_analisis_exploratorio(estado)
+        else:
+            print("Opción no válida.")
 
 if __name__ == "__main__":
     main()
