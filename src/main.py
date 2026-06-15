@@ -1,10 +1,11 @@
 import pandas as pd
 from preprocesamiento import Preprocesador
 from tfidf import CalculadorTFIDF
+from similitud_coseno import SimilitudCoseno
+from procesador_semantico import BuscadorSemantico
 
-def main():
-    print("Iniciando lectura del dataset...")
-    print("Iniciando procesamiento del corpus...")
+def cargar_corpus():
+    print("\nCargando datasets originales...")
 
     biblia = pd.read_csv("datos/dataset_original/t_bbe.csv")
     libros = pd.read_csv("datos/dataset_original/key_english.csv")
@@ -32,6 +33,11 @@ def main():
         ["id", "id_libro", "libro", "testamento", "id_genero", "capitulo", "versiculo", "texto"]
     ]
 
+    print("Corpus base cargado correctamente.")
+
+    return corpus
+
+def infoDatasetOriginal(corpus):
     print("\nPrimeras 5 filas del corpus base:")
     print(corpus.head())
 
@@ -44,37 +50,69 @@ def main():
     print("\nCantidad por testamento:")
     print(corpus["testamento"].value_counts())
 
-    preprocesador = Preprocesador()
+def infoDatasetPreprocesado(corpus, estado):
 
+    vocabulario = estado["vocabulario"]
+    frecuencias_df = estado["frecuencias_df"]
+
+    print("\nPrimeras 5 filas del corpus preprocesado:")
+    print(corpus.head())
+
+    print("\nCantidad total de versículos:")
+    print(len(corpus))
+
+    print("\nCantidad total de libros:")
+    print(corpus["libro"].nunique())
+
+    print("\nCantidad por testamento:")
+    print(corpus["testamento"].value_counts())
+
+    print("\nCantidad de palabras únicas en el vocabulario:")
+    print(len(vocabulario))
+
+    print("\n10 palabras más frecuentes:")
+    print(frecuencias_df.head(10))
+
+    opcion = input("\n¿Desea guardar el corpus preprocesado y las frecuencias en nuevos archivos CSV? (s/n): ")
+    if opcion.lower() == "s":
+        corpus.to_csv("datos/dataset_procesado/corpus_preprocesado.csv", index=False)
+        frecuencias_df.to_csv("datos/dataset_procesado/frecuencias_palabras.csv", index=False)
+        print("Corpus preprocesado guardado como 'datos/dataset_procesado/corpus_preprocesado.csv'.")
+        print("Frecuencias guardadas como 'datos/dataset_procesado/frecuencias_palabras.csv'.")
+
+def procesar_corpus(corpus_original):
+
+    corpus_procesado = corpus_original.copy()
+
+    preprocesador = Preprocesador()
+    
     textos_limpios = []
     tokens_procesados = []
     lista_tokens = []
 
-    for texto in corpus["texto"]:
+    for texto in corpus_original["texto"]:
         texto_limpio, tokens = preprocesador.preprocesar_texto(texto)
 
         textos_limpios.append(texto_limpio)
         tokens_procesados.append(" ".join(tokens))
         lista_tokens.append(tokens)
 
-    corpus["texto_limpio"] = textos_limpios
-    corpus["tokens"] = tokens_procesados
-
-    print("\nPrimeras 5 filas del corpus preprocesado:")
-    print(corpus.head())
+    corpus_procesado["texto_limpio"] = textos_limpios
+    corpus_procesado["tokens"] = tokens_procesados
 
     vocabulario, frecuencias = preprocesador.construir_vocabulario_y_frecuencias(lista_tokens)
-
-    print("\nCantidad de palabras únicas en el vocabulario:")
-    print(len(vocabulario))
-
     frecuencias_df = pd.DataFrame(list(frecuencias.items()), columns=["palabra", "frecuencia"])
     frecuencias_df = frecuencias_df.sort_values("frecuencia", ascending=False).reset_index(drop=True)
 
-    print("\n20 palabras más frecuentes:")
-    print(frecuencias_df.head(20))
+    return corpus_procesado, lista_tokens, vocabulario, frecuencias_df
 
-    print("\nCalculando TF-IDF -> prueba para ver si funciona")
+def buscardor_semantico(estado):
+
+    corpus = estado["corpus"]
+    lista_tokens = estado["lista_tokens"]
+    preprocesador = estado["preprocesador"]
+
+    print("\nCalculando TF-IDF -> prueba para ver si funciona------------------------------")
 
     calculador_tfidf = CalculadorTFIDF()
     
@@ -83,7 +121,7 @@ def main():
     print("\nCantidad de documentos vectorizados:", len(matriz_tfidf))
     print("\nCantidad de palabras con IDF:", len(calculador_tfidf.idf))
 
-    print("\nTop 10 palabras TF-IDF del primer versículo:")
+    print("\nTop 10 palabras TF-IDF del primer versículo:") #print de ejemplo, 
     top_primer_versiculo = calculador_tfidf.obtener_top_tfidf(matriz_tfidf[0], 10)
 
     for palabra, valor in top_primer_versiculo:
@@ -91,15 +129,88 @@ def main():
 
     #Calculo de tf-idf para el primer versículo, solo es una prueba para verificar que el proceso se realizó correctamente.
     
+    print("\nSimilitud del coseno --------------------------------------")
 
-    corpus.to_csv("datos/dataset_procesado/corpus_preprocesado.csv", index=False)
-    frecuencias_df.to_csv("datos/dataset_procesado/frecuencias_palabras.csv", index=False)
+    similitud_coseno = SimilitudCoseno()
 
-    print("\nArchivo guardado en:")
-    print("datos/dataset_procesado/corpus_preprocesado.csv")
+    similitud_versiculos = similitud_coseno.calcular_similitud( #prueba para ver si funciona 
+        matriz_tfidf[0],
+        matriz_tfidf[1]
+    )
 
-    print("\nFrecuencias guardadas en:")
-    print("datos/dataset_procesado/frecuencias_palabras.csv")
+    print("\nSimilitud entre el versiculo 1 y el versiculo 2:") #prueba para ver si funciona
+    print(similitud_versiculos)
+
+
+    print("\nBuscador semántico---------------------------------------")
+
+    buscador = BuscadorSemantico(
+        corpus,
+        matriz_tfidf,
+        preprocesador,
+        calculador_tfidf
+    )
+
+    consulta = "God created the heaven and the earth" #consulta definida fija para probar el buscador semántico, 
+                                                      #se espera hacerlo más manual para el usuaorio en el futuro, pero por 
+                                                      #ahora se define directamente en el código para verificar que el proceso funciona 
+                                                      #correctamente.
+    resultados = buscador.buscar(consulta, 5)
+
+    print("\nConsulta:")
+    print(consulta)
+
+    print("\nListado de 5 versículos más similares:")
+
+    for resultado in resultados:
+        print("--------------------------------------")
+        print("Libro:", resultado["libro"])
+        print("Capítulo:", resultado["capitulo"])
+        print("Versículo:", resultado["versiculo"])
+        print("Similitud:", resultado["similitud"])
+        print("Texto:", resultado["texto"])
+
+def main():
+
+    corpus_original = cargar_corpus()
+    corpus_preprocesado, lista_tokens, vocabulario, frecuencias_df = procesar_corpus(corpus_original)
+
+    estado = {
+        "corpus": corpus_preprocesado,
+        "preprocesador": Preprocesador(),
+        "calculador_tfidf": CalculadorTFIDF(),
+        "lista_tokens": lista_tokens,
+        "vocabulario": vocabulario,
+        "frecuencias_df": frecuencias_df,
+        "matriz_tfidf": None,
+        "preprocesamiento_realizado": False,
+        "tfidf_realizado": False
+    }
+    opcion = ""
+
+    while opcion != "0":
+        print("\nOpciones:")
+        print("1. Ver información del corpus original")
+        print("2. Ver información del corpus resultante")
+        print("3. Buscar semantico")#pa probar, aun no definida la estructura final de esta.
+        print("0. Salir")
+
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            infoDatasetOriginal(corpus_original)
+        elif opcion == "2":
+            infoDatasetPreprocesado(corpus_preprocesado, estado)
+        elif opcion == "3":
+            buscardor_semantico(estado)
+
+
+
+
+
+    
+
+    
 
 if __name__ == "__main__":
     main()
