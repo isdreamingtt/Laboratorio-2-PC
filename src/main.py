@@ -38,6 +38,32 @@ def cargar_corpus():
 
     return corpus
 
+def procesar_corpus(corpus_original):
+
+    corpus_procesado = corpus_original.copy()
+
+    preprocesador = Preprocesador()
+    
+    textos_limpios = []
+    tokens_procesados = []
+    lista_tokens = []
+
+    for texto in corpus_original["texto"]:
+        texto_limpio, tokens = preprocesador.preprocesar_texto(texto)
+
+        textos_limpios.append(texto_limpio)
+        tokens_procesados.append(" ".join(tokens))
+        lista_tokens.append(tokens)
+
+    corpus_procesado["texto_limpio"] = textos_limpios
+    corpus_procesado["tokens"] = tokens_procesados
+
+    vocabulario, frecuencias = preprocesador.construir_vocabulario_y_frecuencias(lista_tokens)
+    frecuencias_df = pd.DataFrame(list(frecuencias.items()), columns=["palabra", "frecuencia"])
+    frecuencias_df = frecuencias_df.sort_values("frecuencia", ascending=False).reset_index(drop=True)
+
+    return corpus_procesado, lista_tokens, vocabulario, frecuencias_df
+
 def infoDatasetOriginal(corpus):
     print("\nPrimeras 5 filas del corpus base:")
     print(corpus.head())
@@ -81,31 +107,7 @@ def infoDatasetPreprocesado(corpus, estado):
         print("Corpus preprocesado guardado como 'datos/dataset_procesado/corpus_preprocesado.csv'.")
         print("Frecuencias guardadas como 'datos/dataset_procesado/frecuencias_palabras.csv'.")
 
-def procesar_corpus(corpus_original):
 
-    corpus_procesado = corpus_original.copy()
-
-    preprocesador = Preprocesador()
-    
-    textos_limpios = []
-    tokens_procesados = []
-    lista_tokens = []
-
-    for texto in corpus_original["texto"]:
-        texto_limpio, tokens = preprocesador.preprocesar_texto(texto)
-
-        textos_limpios.append(texto_limpio)
-        tokens_procesados.append(" ".join(tokens))
-        lista_tokens.append(tokens)
-
-    corpus_procesado["texto_limpio"] = textos_limpios
-    corpus_procesado["tokens"] = tokens_procesados
-
-    vocabulario, frecuencias = preprocesador.construir_vocabulario_y_frecuencias(lista_tokens)
-    frecuencias_df = pd.DataFrame(list(frecuencias.items()), columns=["palabra", "frecuencia"])
-    frecuencias_df = frecuencias_df.sort_values("frecuencia", ascending=False).reset_index(drop=True)
-
-    return corpus_procesado, lista_tokens, vocabulario, frecuencias_df
 
 def buscador_semantico(estado):
 
@@ -174,12 +176,13 @@ def buscador_semantico(estado):
 def visualizacion_analisis_exploratorio(estado):
     corpus = estado["corpus"]
     frecuencias_df = estado["frecuencias_df"]
+    lista_tokens = estado["lista_tokens"]
 
     print("\nVisualización y análisis exploratorio")
     print("--------------------------------------")
 
     visualizador = VisualizadorCorpus()
-    visualizador.generar_visualizaciones_basicas(corpus, frecuencias_df)
+    visualizador.generar_visualizaciones_basicas(corpus, frecuencias_df, lista_tokens)
 
     print("\nVisualizaciones básicas generadas correctamente.")
 

@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
 from tfidf import CalculadorTFIDF
 from similitud_coseno import SimilitudCoseno
+from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+from matplotlib.patches import Patch
 
 plt.style.use("ggplot")
 
@@ -131,8 +136,56 @@ class VisualizadorCorpus:
 
         print("Heatmap guardado: outputs/graficos/heatmap_similitud_libros.png")
 
-    def generar_visualizaciones_basicas(self, corpus, frecuencias_df):
+    def generar_visualizaciones_basicas(self, corpus, frecuencias_df,lista_tokens=None):
         self.grafico_versiculos_por_libro(corpus)
         self.grafico_palabras_frecuentes(frecuencias_df, 20)
         self.grafico_longitud_promedio_por_libro(corpus)
         self.heatmap_similitud_libros(corpus)
+        if lista_tokens is not None:
+            self.grafico_pca_versiculos(corpus, lista_tokens)
+
+    
+    def grafico_pca_versiculos(self, corpus, lista_tokens) :
+
+        calculador_tfidf = CalculadorTFIDF()
+        matriz_tfidf = calculador_tfidf.calcular_tfidf_corpus(lista_tokens)
+
+        vocabulario = sorted(calculador_tfidf.idf.keys())
+        vocab_index = {palabra: i for i, palabra in enumerate(vocabulario)}
+
+        n_docs = len(matriz_tfidf)
+        n_vocab = len(vocabulario)
+        matriz_densa = np.zeros((n_docs, n_vocab))
+
+        for i, vector in enumerate(matriz_tfidf):
+            for palabra, valor in vector.items():
+                if palabra in vocab_index:
+                    matriz_densa[i][vocab_index[palabra]] = valor
+
+        pca = PCA(n_components=2)
+        coordenadas = pca.fit_transform(matriz_densa)
+
+        testamentos = corpus["testamento"].tolist()
+        colores = ["steelblue" if t == "OT" else "tomato" for t in testamentos]
+
+        plt.figure(figsize=(12, 8))
+        plt.scatter(coordenadas[:, 0], coordenadas[:, 1],
+                    c=colores, alpha=0.3, s=5)
+
+        from matplotlib.patches import Patch
+        leyenda = [
+            Patch(color="steelblue", label="Antiguo Testamento"),
+            Patch(color="tomato",    label="Nuevo Testamento")
+        ]
+        plt.legend(handles=leyenda, fontsize=10)
+
+        varianza = pca.explained_variance_ratio_
+        plt.title("PCA de versículos (TF-IDF)", fontsize=14)
+        plt.xlabel(f"Componente Principal 1 ({varianza[0]*100:.1f}% varianza)", fontsize=11)
+        plt.ylabel(f"Componente Principal 2 ({varianza[1]*100:.1f}% varianza)", fontsize=11)
+        plt.tight_layout()
+        plt.savefig(self.ruta_graficos + "pca_versiculos.png", dpi=150)
+        plt.close()
+
+        print("Gráfico guardado: outputs/graficos/pca_versiculos.png")
+        print(f"Varianza explicada: CP1={varianza[0]*100:.1f}%, CP2={varianza[1]*100:.1f}%")
