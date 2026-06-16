@@ -4,6 +4,7 @@ from tfidf import CalculadorTFIDF
 from similitud_coseno import SimilitudCoseno
 from procesador_semantico import BuscadorSemantico
 from visualizador import VisualizadorCorpus
+from clasificador import ClasificadorVersiculos
 
 def cargar_corpus():
     print("\nCargando datasets originales...")
@@ -186,6 +187,33 @@ def visualizacion_analisis_exploratorio(estado):
 
     print("\nVisualizaciones básicas generadas correctamente.")
 
+def clasificador_versiculos(estado):
+    print("\nClasificador de versículos")
+    print("--------------------------------------")
+
+    corpus = estado["corpus"]
+    lista_tokens = estado["lista_tokens"]
+    etiquetas = corpus["libro"].tolist()
+
+    clasificador = ClasificadorVersiculos()
+
+    tokens_train, tokens_test, y_train, y_test, _ = clasificador.dividir_datos(lista_tokens, etiquetas)
+
+    print(f"Datos de entrenamiento: {len(tokens_train)} versículos")
+    print(f"Datos de prueba: {len(tokens_test)} versículos")
+    print("\nEntrenando modelo... (puede tardar unos minutos)")
+
+    clasificador.entrenar(tokens_train, y_train)
+
+    print("Modelo entrenado. Prediciendo...")
+    y_pred = clasificador.predecir(tokens_test)
+
+    clasificador.evaluar(y_test, list(y_pred))
+
+
+
+
+
 def main():
 
     corpus_original = cargar_corpus()
@@ -211,6 +239,7 @@ def main():
         print("2. Ver información del corpus resultante")
         print("3. Buscar semantico")#pa probar, aun no definida la estructura final de esta.
         print("4. Visualización y análisis exploratorio") #pa probar, aun no definida la estructura final de esta.
+        print("5. Clasificador de versículos")
         print("0. Salir")
 
         opcion = input("Seleccione una opción: ")
@@ -224,6 +253,8 @@ def main():
             buscador_semantico(estado)
         elif opcion == "4":
             visualizacion_analisis_exploratorio(estado)
+        elif opcion == "5":
+            clasificador_versiculos(estado)
         else:
             print("Opción no válida.")
 
