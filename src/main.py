@@ -5,6 +5,7 @@ from similitud_coseno import SimilitudCoseno
 from procesador_semantico import BuscadorSemantico
 from visualizador import VisualizadorCorpus
 from clasificador import ClasificadorVersiculos
+from generador_ngramas import GeneradorNGramas
 
 def cargar_corpus():
     print("\nCargando datasets originales...")
@@ -210,7 +211,31 @@ def clasificador_versiculos(estado):
 
     clasificador.evaluar(y_test, list(y_pred))
 
+def generador_texto(estado):
+    lista_tokens = estado["lista_tokens"]
 
+    print("\nEntrenando modelos de n-gramas... (puede tardar)")
+    generador = GeneradorNGramas()
+    generador.entrenar(lista_tokens)
+    print("Modelos entrenados.")
+
+    while True:
+        palabra = input("\nIngrese una palabra inicial (o 'salir'): ").strip().lower()
+        if palabra == "salir":
+            break
+
+        if palabra not in generador.unigramas:
+            print("Palabra no encontrada en el vocabulario, intente otra.")
+            continue
+
+        print("\n--- Unigrama ---")
+        print(generador.generar_unigrama(palabra))
+        print("\n--- Bigrama ---")
+        print(generador.generar_bigrama(palabra))
+        print("\n--- Trigrama ---")
+        print(generador.generar_trigrama(palabra))
+        print("\n--- Cuatrigrama ---")
+        print(generador.generar_cuatrigrama(palabra))
 
 
 
@@ -240,6 +265,7 @@ def main():
         print("3. Buscar semantico")#pa probar, aun no definida la estructura final de esta.
         print("4. Visualización y análisis exploratorio") #pa probar, aun no definida la estructura final de esta.
         print("5. Clasificador de versículos")
+        print("6. Generador de texto")
         print("0. Salir")
 
         opcion = input("Seleccione una opción: ")
@@ -255,6 +281,8 @@ def main():
             visualizacion_analisis_exploratorio(estado)
         elif opcion == "5":
             clasificador_versiculos(estado)
+        elif opcion == "6":
+            generador_texto(estado)
         else:
             print("Opción no válida.")
 
