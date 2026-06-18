@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 from tfidf import CalculadorTFIDF
 from similitud_coseno import SimilitudCoseno
 from sklearn.decomposition import PCA
-from sklearn.decomposition import TruncatedSVD
-from sklearn.preprocessing import StandardScaler
 import numpy as np
 from matplotlib.patches import Patch
 
@@ -134,7 +132,7 @@ class VisualizadorCorpus:
         plt.savefig(self.ruta_graficos + "heatmap_similitud_libros.png", dpi=150)
         plt.close()
 
-        print("Heatmap guardado: outputs/graficos/heatmap_similitud_libros.png")
+        print("Gráfico guardado: outputs/graficos/heatmap_similitud_libros.png")
 
     def generar_visualizaciones_basicas(self, corpus, frecuencias_df,lista_tokens=None):
         self.grafico_versiculos_por_libro(corpus)
@@ -172,7 +170,6 @@ class VisualizadorCorpus:
         plt.scatter(coordenadas[:, 0], coordenadas[:, 1],
                     c=colores, alpha=0.3, s=5)
 
-        from matplotlib.patches import Patch
         leyenda = [
             Patch(color="steelblue", label="Antiguo Testamento"),
             Patch(color="tomato",    label="Nuevo Testamento")
@@ -188,4 +185,3 @@ class VisualizadorCorpus:
         plt.close()
 
         print("Gráfico guardado: outputs/graficos/pca_versiculos.png")
-        print(f"Varianza explicada: CP1={varianza[0]*100:.1f}%, CP2={varianza[1]*100:.1f}%")

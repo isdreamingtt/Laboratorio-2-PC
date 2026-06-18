@@ -6,6 +6,7 @@ from procesador_semantico import BuscadorSemantico
 from visualizador import VisualizadorCorpus
 from clasificador import ClasificadorVersiculos
 from generador_ngramas import GeneradorNGramas
+from analisis_sentimiento import AnalizadorSentimiento
 
 def cargar_corpus():
     print("\nCargando datasets originales...")
@@ -29,8 +30,6 @@ def cargar_corpus():
     })
 
     corpus = pd.merge(biblia, libros, on="id_libro", how="left")
-    #Se hizo un merge para unir ambos datasets, usando la columna "id_libro" como clave. Se usó un merge de tipo "left" 
-    #para mantener todos los versículos de la biblia, incluso si no tienen información de libro en el dataset de libros.
 
     corpus = corpus[
         ["id", "id_libro", "libro", "testamento", "id_genero", "capitulo", "versiculo", "texto"]
@@ -102,77 +101,55 @@ def infoDatasetPreprocesado(corpus, estado):
     print("\n10 palabras más frecuentes:")
     print(frecuencias_df.head(10))
 
-    opcion = input("\n¿Desea guardar el corpus preprocesado y las frecuencias en nuevos archivos CSV? (s/n): ")
-    if opcion.lower() == "s":
-        corpus.to_csv("datos/dataset_procesado/corpus_preprocesado.csv", index=False)
-        frecuencias_df.to_csv("datos/dataset_procesado/frecuencias_palabras.csv", index=False)
-        print("Corpus preprocesado guardado como 'datos/dataset_procesado/corpus_preprocesado.csv'.")
-        print("Frecuencias guardadas como 'datos/dataset_procesado/frecuencias_palabras.csv'.")
-
-
+    while True:
+        opcion = input("\n¿Desea guardar el corpus preprocesado y las frecuencias en nuevos archivos CSV? (s/n): ").strip().lower()
+        if opcion == "s":
+            corpus.to_csv("datos/dataset_procesado/corpus_preprocesado.csv", index=False)
+            frecuencias_df.to_csv("datos/dataset_procesado/frecuencias_palabras.csv", index=False)
+            print("Corpus preprocesado guardado como 'datos/dataset_procesado/corpus_preprocesado.csv'.")
+            print("Frecuencias guardadas como 'datos/dataset_procesado/frecuencias_palabras.csv'.")
+            break
+        elif opcion == "n":
+            break
+        else:
+            print("Ingrese 's' o 'n'.")
 
 def buscador_semantico(estado):
 
     corpus = estado["corpus"]
     lista_tokens = estado["lista_tokens"]
     preprocesador = estado["preprocesador"]
-
-    print("\nTF-IDF test")
-
     calculador_tfidf = estado["calculador_tfidf"]
-    
+
     matriz_tfidf = calculador_tfidf.calcular_tfidf_corpus(lista_tokens)
 
-    print("\nCantidad de documentos vectorizados:", len(matriz_tfidf))
-    print("\nCantidad de palabras con IDF:", len(calculador_tfidf.idf))
+    buscador = BuscadorSemantico(corpus, matriz_tfidf, preprocesador, calculador_tfidf)
 
-    print("\nTop 10 palabras TF-IDF del primer versículo:") #print de ejemplo, 
-    top_primer_versiculo = calculador_tfidf.obtener_top_tfidf(matriz_tfidf[0], 10)
+    consulta = input("\nIngrese su consulta: ")
+    if consulta == "":
+        print("Ingrese una consulta válida.")
+        return
+    while True:
+        try:
+            k = int(input("¿Cuántos resultados desea ver? "))
+            if k <= 0:
+                print("Ingrese un número mayor a 0.")
+                continue
+            if k > 20:
+                print("Máximo 20 resultados.")
+                k = 20
+            break
+        except ValueError:
+            print("Ingrese un número válido.")
+    resultados = buscador.buscar(consulta, k)
 
-    for palabra, valor in top_primer_versiculo:
-        print(palabra, ":", valor)
-
-    #Calculo de tf-idf para el primer versículo, solo es una prueba para verificar que el proceso se realizó correctamente.
-    
-    print("\nSimilitud del coseno --------------------------------------")
-
-    similitud_coseno = estado["similitud_coseno"]
-
-    similitud_versiculos = similitud_coseno.calcular_similitud( #prueba para ver si funciona 
-        matriz_tfidf[0],
-        matriz_tfidf[1]
-    )
-
-    print("\nSimilitud entre el versiculo 1 y el versiculo 2:") #prueba para ver si funciona
-    print(similitud_versiculos)
-
-
-    print("\nBuscador semántico---------------------------------------")
-
-    buscador = BuscadorSemantico(
-        corpus,
-        matriz_tfidf,
-        preprocesador,
-        calculador_tfidf
-    )
-
-    consulta = "God created the heaven and the earth" #consulta definida fija para probar el buscador semántico, 
-                                                      #se espera hacerlo más manual para el usuaorio en el futuro, pero por 
-                                                      #ahora se define directamente en el código para verificar que el proceso funciona 
-                                                      #correctamente.
-    resultados = buscador.buscar(consulta, 5)
-
-    print("\nConsulta:")
-    print(consulta)
-
-    print("\nListado de 5 versículos más similares:")
-
+    print(f"\nResultados para: '{consulta}'")
     for resultado in resultados:
         print("--------------------------------------")
         print("Libro:", resultado["libro"])
         print("Capítulo:", resultado["capitulo"])
         print("Versículo:", resultado["versiculo"])
-        print("Similitud:", resultado["similitud"])
+        print("Similitud:", round(resultado["similitud"], 4))
         print("Texto:", resultado["texto"])
 
 def visualizacion_analisis_exploratorio(estado):
@@ -180,18 +157,10 @@ def visualizacion_analisis_exploratorio(estado):
     frecuencias_df = estado["frecuencias_df"]
     lista_tokens = estado["lista_tokens"]
 
-    print("\nVisualización y análisis exploratorio")
-    print("--------------------------------------")
-
     visualizador = VisualizadorCorpus()
     visualizador.generar_visualizaciones_basicas(corpus, frecuencias_df, lista_tokens)
 
-    print("\nVisualizaciones básicas generadas correctamente.")
-
 def clasificador_versiculos(estado):
-    print("\nClasificador de versículos")
-    print("--------------------------------------")
-
     corpus = estado["corpus"]
     lista_tokens = estado["lista_tokens"]
     etiquetas = corpus["libro"].tolist()
@@ -210,8 +179,10 @@ def clasificador_versiculos(estado):
     y_pred = clasificador.predecir(tokens_test)
 
     clasificador.evaluar(y_test, list(y_pred))
+    clasificador.graficar_confusion(y_test, list(y_pred), "outputs/graficos/")
 
 def generador_texto(estado):
+
     lista_tokens = estado["lista_tokens"]
 
     print("\nEntrenando modelos de n-gramas... (puede tardar)")
@@ -221,6 +192,10 @@ def generador_texto(estado):
 
     while True:
         palabra = input("\nIngrese una palabra inicial (o 'salir'): ").strip().lower()
+        if palabra == "":
+            print("Ingrese una palabra válida.")
+            continue
+        
         if palabra == "salir":
             break
 
@@ -237,7 +212,19 @@ def generador_texto(estado):
         print("\n--- Cuatrigrama ---")
         print(generador.generar_cuatrigrama(palabra))
 
+def analisis_sentimiento(estado):
 
+    corpus = estado["corpus"]
+
+    analizador = AnalizadorSentimiento()
+
+    corpus_sentimiento, sentimiento_libro, sentimiento_capitulo = analizador.analizar_corpus(corpus)
+
+    estado["corpus_sentimiento"] = corpus_sentimiento
+    estado["sentimiento_libro"] = sentimiento_libro
+    estado["sentimiento_capitulo"] = sentimiento_capitulo
+
+    print("\nProceso finalizando correctamente.")
 
 def main():
 
@@ -248,24 +235,25 @@ def main():
         "corpus": corpus_preprocesado,
         "preprocesador": Preprocesador(),
         "calculador_tfidf": CalculadorTFIDF(),
+        "similitud_coseno": SimilitudCoseno(),
         "lista_tokens": lista_tokens,
         "vocabulario": vocabulario,
         "frecuencias_df": frecuencias_df,
-        "similitud_coseno": SimilitudCoseno(),
-        "matriz_tfidf": None,
-        "preprocesamiento_realizado": False,
-        "tfidf_realizado": False
+        "corpus_sentimiento": None,
+        "sentimiento_libro": None,
+        "sentimiento_capitulo": None
     }
     opcion = ""
 
     while opcion != "0":
-        print("\nOpciones:")
+        print("\Menú:")
         print("1. Ver información del corpus original")
         print("2. Ver información del corpus resultante")
-        print("3. Buscar semantico")#pa probar, aun no definida la estructura final de esta.
-        print("4. Visualización y análisis exploratorio") #pa probar, aun no definida la estructura final de esta.
+        print("3. Buscar semantico")
+        print("4. Visualización y análisis exploratorio")
         print("5. Clasificador de versículos")
         print("6. Generador de texto")
+        print("7. Análisis de sentimiento")
         print("0. Salir")
 
         opcion = input("Seleccione una opción: ")
@@ -283,6 +271,8 @@ def main():
             clasificador_versiculos(estado)
         elif opcion == "6":
             generador_texto(estado)
+        elif opcion == "7":
+            analisis_sentimiento(estado)
         else:
             print("Opción no válida.")
 

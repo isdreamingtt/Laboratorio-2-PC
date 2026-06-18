@@ -1,13 +1,13 @@
 from tfidf import CalculadorTFIDF
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 class ClasificadorVersiculos:
     def __init__(self):
-        self.modelo = LogisticRegression(max_iter=1000, C=5)
+        self.modelo = LogisticRegression(max_iter=1000, C=5, class_weight='balanced')
         self.calculador_tfidf = CalculadorTFIDF()
         self.vocabulario = []
         self.vocab_index = {}
@@ -21,7 +21,7 @@ class ClasificadorVersiculos:
         for i, vector in enumerate(matriz_tfidf):
             for palabra, valor in vector.items():
                 if palabra in self.vocab_index:
-                    matriz[i][self.vocab_index[palabra]] = valor
+                    matriz[i][self.vocab_index[palabra]] = valor    
 
         return matriz
 
@@ -55,14 +55,12 @@ class ClasificadorVersiculos:
         y_test  = [etiquetas[i] for i in idx_test]
 
         return tokens_train, tokens_test, y_train, y_test, idx_test
-
+    
     def predecir(self, tokens_test):
         matriz_tfidf_test = []
 
         for tokens in tokens_test:
-            from tfidf import CalculadorTFIDF as C
-            tf_calc = C()
-            tf = tf_calc.calcular_tf(tokens)
+            tf = self.calculador_tfidf.calcular_tf(tokens)
             vector = {}
             for palabra in tf:
                 if palabra in self.calculador_tfidf.idf:
@@ -92,3 +90,42 @@ class ClasificadorVersiculos:
             print(clases_cortas[i].ljust(25) + "".join([str(v).ljust(6) for v in fila]))
 
         return acc, matriz
+    
+    def graficar_confusion(self, y_real, y_pred, ruta):
+        clases = sorted(set(y_real))
+        matriz = confusion_matrix(y_real, y_pred, labels=clases)
+
+        filas = len(matriz)
+        columnas = len(matriz[0])
+        matriz_norm = []
+
+        for i in range(filas):
+            total_fila = 0
+            for j in range(columnas):
+                total_fila += matriz[i][j]
+
+            fila_norm = []
+            for j in range(columnas):
+                if total_fila == 0:
+                    fila_norm.append(0.0)
+                else:
+                    fila_norm.append(matriz[i][j] / total_fila)
+
+            matriz_norm.append(fila_norm)
+
+        matriz_norm = np.array(matriz_norm)
+        
+
+        plt.figure(figsize=(20, 16))
+        
+        plt.imshow(matriz_norm, interpolation="nearest", cmap="viridis") 
+        plt.grid(False)
+        plt.colorbar()
+        plt.title("Matriz de confusión (Normalizada)", fontsize=14)
+        plt.xticks(range(len(clases)), clases, rotation=90, fontsize=6)
+        plt.yticks(range(len(clases)), clases, fontsize=6)
+        plt.xlabel("Predicción", fontsize=11)
+        plt.ylabel("Real", fontsize=11)
+        plt.tight_layout()
+        plt.savefig(ruta + "matriz_confusion.png", dpi=150)
+        plt.close()
