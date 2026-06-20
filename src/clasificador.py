@@ -116,16 +116,16 @@ class ClasificadorVersiculos:
         matriz_norm = np.array(matriz_norm)
         
 
-        plt.figure(figsize=(20, 16))
+        plt.figure(figsize=(24, 20))
         
         plt.imshow(matriz_norm, interpolation="nearest", cmap="viridis") 
         plt.grid(False)
         plt.colorbar()
-        plt.title("Matriz de confusión (Normalizada)", fontsize=14)
-        plt.xticks(range(len(clases)), clases, rotation=90, fontsize=6)
-        plt.yticks(range(len(clases)), clases, fontsize=6)
-        plt.xlabel("Predicción", fontsize=11)
-        plt.ylabel("Real", fontsize=11)
+        plt.title("Matriz de confusión (Normalizada)", fontsize=40)
+        plt.xticks(range(len(clases)), clases, rotation=90, fontsize=12)
+        plt.yticks(range(len(clases)), clases, fontsize=12)
+        plt.xlabel("Predicción", fontsize=30)
+        plt.ylabel("Real", fontsize=30)
         plt.tight_layout()
-        plt.savefig(ruta + "matriz_confusion.png", dpi=150)
+        plt.savefig(ruta + "matriz_confusion.png", dpi=300)
         plt.close()

@@ -16,11 +16,11 @@ class VisualizadorCorpus:
 
         plt.figure(figsize=(12, 10))
         cantidad_por_libro.plot(kind="barh", color="steelblue")
-        plt.title("Cantidad de versículos por libro", fontsize=14)
-        plt.xlabel("Cantidad de versículos", fontsize=11)
-        plt.ylabel("Libro", fontsize=11)
+        plt.title("Cantidad de versículos por libro", fontsize=20)
+        plt.xlabel("Cantidad de versículos", fontsize=17)
+        plt.ylabel("Libro", fontsize=17)
         plt.tight_layout()
-        plt.savefig(self.ruta_graficos + "versiculos_por_libro.png", dpi=150)
+        plt.savefig(self.ruta_graficos + "versiculos_por_libro.png", dpi=300)
         plt.close()
 
         print("Gráfico guardado: outputs/graficos/versiculos_por_libro.png")
@@ -30,12 +30,12 @@ class VisualizadorCorpus:
 
         plt.figure(figsize=(10, 6))
         plt.bar(top_palabras["palabra"], top_palabras["frecuencia"], color="steelblue")
-        plt.title("Palabras más frecuentes", fontsize=14)
-        plt.xlabel("Palabra", fontsize=11)
-        plt.ylabel("Frecuencia", fontsize=11)
+        plt.title("Palabras más frecuentes", fontsize=20)
+        plt.xlabel("Palabra", fontsize=15)
+        plt.ylabel("Frecuencia", fontsize=15)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
-        plt.savefig(self.ruta_graficos + "palabras_frecuentes.png", dpi=150)
+        plt.savefig(self.ruta_graficos + "palabras_frecuentes.png", dpi=300)
         plt.close()
 
         print("Gráfico guardado: outputs/graficos/palabras_frecuentes.png")
@@ -53,11 +53,11 @@ class VisualizadorCorpus:
 
         plt.figure(figsize=(12, 10))
         longitud_promedio.plot(kind="barh", color="steelblue")
-        plt.title("Longitud promedio de versículos por libro", fontsize=14)
-        plt.xlabel("Cantidad promedio de palabras", fontsize=11)
-        plt.ylabel("Libro", fontsize=11)
+        plt.title("Longitud promedio de versículos por libro", fontsize=20)
+        plt.xlabel("Cantidad promedio de palabras", fontsize=15)
+        plt.ylabel("Libro", fontsize=15)
         plt.tight_layout()
-        plt.savefig(self.ruta_graficos + "longitud_promedio_por_libro.png", dpi=150)
+        plt.savefig(self.ruta_graficos + "longitud_promedio_por_libro.png", dpi=300)
         plt.close()
 
         print("Gráfico guardado: outputs/graficos/longitud_promedio_por_libro.png")
@@ -118,18 +118,18 @@ class VisualizadorCorpus:
 
         plt.figure(figsize=(14, 12))
         plt.imshow(matriz_similitud,  interpolation="nearest")
-        plt.title("Heatmap de similitud entre libros")
+        plt.title("Heatmap de similitud entre libros", fontsize=30)
         plt.colorbar(label="Similitud coseno")
 
-        plt.xticks(range(len(libros)), libros, rotation=90, fontsize=6)
-        plt.yticks(range(len(libros)), libros, fontsize=6)
+        plt.xticks(range(len(libros)), libros, rotation=90, fontsize=7)
+        plt.yticks(range(len(libros)), libros, fontsize=7)
         plt.grid(False)
         for i in range(len(libros)):
             plt.hlines(i - 0.5, -0.5, len(libros) - 0.5, colors="white", linewidths=0.3)
             plt.vlines(i - 0.5, -0.5, len(libros) - 0.5, colors="white", linewidths=0.3)
 
         plt.tight_layout()
-        plt.savefig(self.ruta_graficos + "heatmap_similitud_libros.png", dpi=150)
+        plt.savefig(self.ruta_graficos + "heatmap_similitud_libros.png", dpi=300)
         plt.close()
 
         print("Gráfico guardado: outputs/graficos/heatmap_similitud_libros.png")
@@ -177,11 +177,11 @@ class VisualizadorCorpus:
         plt.legend(handles=leyenda, fontsize=10)
 
         varianza = pca.explained_variance_ratio_
-        plt.title("PCA de versículos (TF-IDF)", fontsize=14)
-        plt.xlabel(f"Componente Principal 1 ({varianza[0]*100:.1f}% varianza)", fontsize=11)
-        plt.ylabel(f"Componente Principal 2 ({varianza[1]*100:.1f}% varianza)", fontsize=11)
+        plt.title("PCA de versículos (TF-IDF)", fontsize=25)
+        plt.xlabel(f"Componente Principal 1 ({varianza[0]*100:.1f}% varianza)", fontsize=15)
+        plt.ylabel(f"Componente Principal 2 ({varianza[1]*100:.1f}% varianza)", fontsize=15)
         plt.tight_layout()
-        plt.savefig(self.ruta_graficos + "pca_versiculos.png", dpi=150)
+        plt.savefig(self.ruta_graficos + "pca_versiculos.png", dpi=300)
         plt.close()
 
         print("Gráfico guardado: outputs/graficos/pca_versiculos.png")
